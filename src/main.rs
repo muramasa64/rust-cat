@@ -3,9 +3,11 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader, Read};
 
 fn main() {
-    for filename in env::args() {
+    let mut args = env::args();
+    args.next().unwrap();
+    for filename in args {
         if read_file(&filename).is_err() {
-            println!("file not found");
+            println!("file not found: {}", filename);
         }
     }
 
