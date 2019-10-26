@@ -1,27 +1,39 @@
 use std::env;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, BufRead, BufReader};
 
 fn main() {
     let mut args = env::args();
-    args.next().unwrap();
-    for filename in args {
-        if read_file(&filename).is_err() {
-            println!("file not found: {}", filename);
+    if args.len() >= 2 {
+        args.next().unwrap();
+        for filename in args {
+            match File::open(filename) {
+                Ok(file) => {
+                    let mut buf_reader = BufReader::new(file);
+                    do_cat(&mut buf_reader);
+                }
+                Err(e) => println!("{}", e),
+            }
         }
-    }
-
-    let stdin = io::stdin();
-    for line in stdin.lock().lines() {
-        println!("{}", line.unwrap());
+    } else {
+        let stdin = io::stdin();
+        do_cat(&mut stdin.lock());
     }
 }
 
-fn read_file(filename: &str) -> std::io::Result<()> {
-    let file = File::open(filename)?;
-    let mut buf_reader = BufReader::new(file);
-    let mut contents = String::new();
-    buf_reader.read_to_string(&mut contents)?;
-    println!("{}", contents);
-    Ok(())
+fn do_cat(br: &mut dyn BufRead) -> () {
+    let mut buffer = String::new();
+    loop {
+        match br.read_to_string(&mut buffer) {
+            Ok(0) => break,
+            Ok(_) => {
+                println!("{}", buffer);
+                buffer.clear();
+            }
+            Err(e) => {
+                println!("{}", e);
+                break;
+            }
+        }
+    }
 }
